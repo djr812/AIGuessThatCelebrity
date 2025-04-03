@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras.applications import MobileNetV2, ResNet50V2
+from tensorflow.keras.applications import MobileNetV2, ResNet50V2, EfficientNetB0
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
@@ -12,12 +12,13 @@ import cv2
 from PIL import Image
 import requests
 from io import BytesIO
+from tensorflow.keras.mixed_precision import set_global_policy
 
 # Configuration
 IMG_SIZE = 224  # Increased from 160 to 224 for better feature extraction
 BATCH_SIZE = 32
 EPOCHS = 30  # Increased from 10 to 30
-NUM_CLASSES = 5000  # Reduced from 10k to 5k to focus on more frequent identities
+NUM_CLASSES = 1000  # Reduced from 5000 to 1000 to focus on more frequent identities
 LEARNING_RATE = 1e-4  # Added explicit learning rate
 
 # Paths
@@ -25,6 +26,8 @@ IMG_DIR = 'img_align_celeba'
 IDENTITY_FILE = 'identity_CelebA.txt'
 PARTITION_FILE = 'list_eval_partition.txt'
 IDENTITY_NAME_FILE = 'list_identity_celeba.txt'
+
+set_global_policy('mixed_float16')  # Use FP16 for faster computation
 
 def load_identity_data():
     """Load celebrity identity information"""
@@ -152,8 +155,8 @@ def prepare_dataset():
 
 def create_model(num_classes):
     """Create a fine-tuned model for celebrity recognition with improved architecture"""
-    # Use ResNet50V2 as the base model for better feature extraction
-    base_model = ResNet50V2(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
+    # Use EfficientNetB0 as the base model for better feature extraction
+    base_model = EfficientNetB0(weights='imagenet', include_top=False, input_shape=(IMG_SIZE, IMG_SIZE, 3))
     
     # Fine-tune the top layers of the base model
     for layer in base_model.layers[:-30]:  # Freeze earlier layers, train later layers
@@ -281,6 +284,10 @@ def train_model():
     val_df = df[df['partition'] == 1]
     test_df = df[df['partition'] == 2]
     
+    # Reduce dataset for first iteration
+    train_df = train_df.sample(frac=0.3, random_state=42)
+    val_df = val_df.sample(frac=0.3, random_state=42)
+    
     print(f"Train set: {len(train_df)} images")
     print(f"Validation set: {len(val_df)} images")
     print(f"Test set: {len(test_df)} images")
@@ -320,7 +327,19 @@ def train_model():
     # Train the model
     history = model.fit(
         train_generator,
-        epochs=EPOCHS,
+        epochs=10,
+        validation_data=val_generator,
+        callbacks=[checkpoint, early_stopping, reduce_lr],
+        verbose=1
+    )
+    
+    # Then unfreeze and train with lower learning rate
+    for layer in model.layers[-20:]:
+        layer.trainable = True
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5))
+    history = model.fit(
+        train_generator,
+        epochs=20,
         validation_data=val_generator,
         callbacks=[checkpoint, early_stopping, reduce_lr],
         verbose=1
