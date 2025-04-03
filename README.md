@@ -9,6 +9,8 @@ The application uses the CelebA dataset, which includes:
 - Identity information for each image
 - Train/validation/test partition information
 
+The CelebA dataset is also available at the Google Drive link: https://drive.google.com/drive/folders/0B7EVK8r0v71pWEZsZE9oNnFzTm8?resourcekey=0-5BR16BdXnb8hVj6CNHKzLg&usp=sharing
+
 ## Features
 
 - **Deep Learning Model**: Uses a fine-tuned MobileNetV2 architecture to identify celebrities.
@@ -107,6 +109,13 @@ The model uses transfer learning with MobileNetV2 as the base model:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+When using CelebA, you agree the following terms and conditions:
+- The CelebA dataset is available for *non-commercial research purposes* only.
+- All images of the CelebA dataset are obtained from the Internet which are not property of MMLAB, The Chinese University of Hong Kong. The MMLAB is not responsible for the content nor the meaning of these images.
+- You agree *not to* reproduce, duplicate, copy, sell, trade, resell or exploit for any commercial purposes, any portion of the images and any portion of derived data.
+- You agree *not to* further copy, publish or distribute any portion of the CelebA dataset. Except, for internal use at a single site within the same organization it is allowed to make copies of the dataset.
+- The MMLAB reserves the right to terminate your access to the CelebA dataset at any time.
 
 ## Acknowledgments
 
