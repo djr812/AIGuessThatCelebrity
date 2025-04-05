@@ -124,3 +124,8 @@ test.txt
 identity*.txt
 *.h5
 *.npy
+*.keras
+*.dat
+*.v2
+*.pb
+variables/
